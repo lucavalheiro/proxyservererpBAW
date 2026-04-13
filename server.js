@@ -21,16 +21,23 @@ const OPENAPI_SPEC = {
   "openapi": "3.0.0",
   "info": {
     "title": "ERPNext O2C Complete API via Railway Proxy",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   "servers": [{ "url": "https://proxyservererpbaw-production.up.railway.app" }],
   "paths": {
     "/erp/sales-order/last": {
       "get": {
         "operationId": "getLastSalesOrder",
-        "summary": "Get the last created Sales Order (no params needed)",
+        "summary": "Get the last created Sales Order (returns single-item list)",
         "responses": {
-          "200": { "description": "Last Sales Order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } }
+          "200": {
+            "description": "Last Sales Order as list with one item",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListResponse" }
+              }
+            }
+          }
         }
       }
     },
@@ -302,10 +309,9 @@ const OPENAPI_SPEC = {
 app.get("/", (req, res) => { res.json(OPENAPI_SPEC); });
 app.get("/openapi.json", (req, res) => { res.json(OPENAPI_SPEC); });
 
-// ✅ CORREÇÃO: Retorna a última Sales Order com objeto simplificado
-// O problema anterior era que detailResp.data retornava o documento completo do ERPNext
-// com dezenas de campos e arrays aninhados, e o BAW não conseguia deserializar
-// para o tipo DocResponse (JSONObject). Agora retorna só os campos essenciais.
+// ✅ v1.0.4: Retorna a última Sales Order no formato ListResponse
+// O BAW só consegue mapear ListResponse (data como array), não DocResponse.
+// Retorna array com 1 item, ordenado por criação decrescente.
 app.get("/erp/sales-order/last", async (req, res) => {
   try {
     const listResp = await axios.get(`${ERP_BASE}/api/resource/Sales Order`, {
@@ -320,8 +326,8 @@ app.get("/erp/sales-order/last", async (req, res) => {
     const items = listResp.data?.data;
     if (!items || items.length === 0) return res.status(404).json({ error: "No Sales Orders found" });
 
-    // Retorna objeto simplificado dentro de "data" (não array)
-    res.json({ data: items[0] });
+    // Retorna como ListResponse: data é um ARRAY com 1 item
+    res.json({ data: [items[0]] });
   } catch (err) {
     res.status(err.response?.status || 500).json({ error: err.message, details: err.response?.data || null });
   }
