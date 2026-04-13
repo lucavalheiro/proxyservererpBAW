@@ -21,7 +21,7 @@ const OPENAPI_SPEC = {
   "openapi": "3.0.0",
   "info": {
     "title": "ERPNext O2C Complete API via Railway Proxy",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "servers": [{ "url": "https://proxyservererpbaw-production.up.railway.app" }],
   "paths": {
@@ -302,7 +302,10 @@ const OPENAPI_SPEC = {
 app.get("/", (req, res) => { res.json(OPENAPI_SPEC); });
 app.get("/openapi.json", (req, res) => { res.json(OPENAPI_SPEC); });
 
-// ✅ Rota dedicada — retorna SEMPRE a última Sales Order criada (sem parâmetros)
+// ✅ CORREÇÃO: Retorna a última Sales Order com objeto simplificado
+// O problema anterior era que detailResp.data retornava o documento completo do ERPNext
+// com dezenas de campos e arrays aninhados, e o BAW não conseguia deserializar
+// para o tipo DocResponse (JSONObject). Agora retorna só os campos essenciais.
 app.get("/erp/sales-order/last", async (req, res) => {
   try {
     const listResp = await axios.get(`${ERP_BASE}/api/resource/Sales Order`, {
@@ -316,12 +319,9 @@ app.get("/erp/sales-order/last", async (req, res) => {
     });
     const items = listResp.data?.data;
     if (!items || items.length === 0) return res.status(404).json({ error: "No Sales Orders found" });
-    const name = items[0].name;
-    const detailResp = await axios.get(
-      `${ERP_BASE}/api/resource/Sales Order/${encodeURIComponent(name)}`,
-      { headers: { Authorization: ERP_TOKEN }, timeout: 30000 }
-    );
-    res.json(detailResp.data);
+
+    // Retorna objeto simplificado dentro de "data" (não array)
+    res.json({ data: items[0] });
   } catch (err) {
     res.status(err.response?.status || 500).json({ error: err.message, details: err.response?.data || null });
   }
