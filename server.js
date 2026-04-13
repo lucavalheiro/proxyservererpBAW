@@ -4,7 +4,7 @@ const axios = require("axios");
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// CORS — permite que o CP4BA consuma a API
+// CORS
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
@@ -17,18 +17,23 @@ const PORT = process.env.PORT || 3000;
 const ERP_BASE = process.env.ERP_BASE_URL || "https://erpcoe.c.erpnext.com";
 const ERP_TOKEN = process.env.ERP_TOKEN || "token 5eeeb697cabb58b:15a1c848d2a25f1";
 
-// OpenAPI spec — CP4BA descobre as operações aqui
 const OPENAPI_SPEC = {
   "openapi": "3.0.0",
   "info": {
     "title": "ERPNext O2C Complete API via Railway Proxy",
-    "version": "1.0.1",
-    "description": "Complete CRUD for ERPNext O2C via Railway proxy"
+    "version": "1.0.2"
   },
-  "servers": [
-    { "url": "https://proxyservererpbaw-production.up.railway.app" }
-  ],
+  "servers": [{ "url": "https://proxyservererpbaw-production.up.railway.app" }],
   "paths": {
+    "/erp/sales-order/last": {
+      "get": {
+        "operationId": "getLastSalesOrder",
+        "summary": "Get the last created Sales Order (no params needed)",
+        "responses": {
+          "200": { "description": "Last Sales Order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } }
+        }
+      }
+    },
     "/erp/api/resource/Sales%20Order": {
       "get": {
         "operationId": "listSalesOrders",
@@ -36,35 +41,36 @@ const OPENAPI_SPEC = {
         "parameters": [
           { "name": "fields", "in": "query", "schema": { "type": "string" } },
           { "name": "filters", "in": "query", "schema": { "type": "string" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "order_by", "in": "query", "schema": { "type": "string" } }
         ],
-        "responses": { "200": { "description": "List of Sales Orders", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListResponse" } } } } }
+        "responses": { "200": { "description": "List", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListResponse" } } } } }
       },
       "post": {
         "operationId": "createSalesOrder",
         "summary": "Create Sales Order",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SalesOrderInput" } } } },
-        "responses": { "200": { "description": "Sales Order created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
+        "responses": { "200": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       }
     },
     "/erp/api/resource/Sales%20Order/{name}": {
       "get": {
         "operationId": "getSalesOrder",
         "summary": "Get Sales Order by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Sales Order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       },
       "put": {
         "operationId": "updateSalesOrder",
         "summary": "Update Sales Order",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SalesOrderInput" } } } },
         "responses": { "200": { "description": "Updated" } }
       },
       "delete": {
         "operationId": "deleteSalesOrder",
         "summary": "Delete Sales Order",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "202": { "description": "Deleted" } }
       }
     },
@@ -90,20 +96,20 @@ const OPENAPI_SPEC = {
       "get": {
         "operationId": "getDeliveryNote",
         "summary": "Get Delivery Note by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Delivery Note", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       },
       "put": {
         "operationId": "updateDeliveryNote",
         "summary": "Update Delivery Note",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeliveryNoteInput" } } } },
         "responses": { "200": { "description": "Updated" } }
       },
       "delete": {
         "operationId": "deleteDeliveryNote",
         "summary": "Delete Delivery Note",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "202": { "description": "Deleted" } }
       }
     },
@@ -129,20 +135,20 @@ const OPENAPI_SPEC = {
       "get": {
         "operationId": "getSalesInvoice",
         "summary": "Get Sales Invoice by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Sales Invoice", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       },
       "put": {
         "operationId": "updateSalesInvoice",
         "summary": "Update Sales Invoice",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SalesInvoiceInput" } } } },
         "responses": { "200": { "description": "Updated" } }
       },
       "delete": {
         "operationId": "deleteSalesInvoice",
         "summary": "Delete Sales Invoice",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "202": { "description": "Deleted" } }
       }
     },
@@ -168,20 +174,20 @@ const OPENAPI_SPEC = {
       "get": {
         "operationId": "getPaymentEntry",
         "summary": "Get Payment Entry by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Payment Entry", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       },
       "put": {
         "operationId": "updatePaymentEntry",
         "summary": "Update Payment Entry",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentEntryInput" } } } },
         "responses": { "200": { "description": "Updated" } }
       },
       "delete": {
         "operationId": "deletePaymentEntry",
         "summary": "Delete Payment Entry",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "202": { "description": "Deleted" } }
       }
     },
@@ -200,7 +206,7 @@ const OPENAPI_SPEC = {
       "get": {
         "operationId": "getCustomer",
         "summary": "Get Customer by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Customer", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
       }
     },
@@ -219,20 +225,8 @@ const OPENAPI_SPEC = {
       "get": {
         "operationId": "getItem",
         "summary": "Get Item by ID",
-        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "parameters": [{ "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Item", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocResponse" } } } } }
-      }
-    },
-    "/erp/api/resource/Item%20Price": {
-      "get": {
-        "operationId": "listItemPrices",
-        "summary": "List Item Prices",
-        "parameters": [
-          { "name": "fields", "in": "query", "schema": { "type": "string" } },
-          { "name": "filters", "in": "query", "schema": { "type": "string" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
-        ],
-        "responses": { "200": { "description": "List", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListResponse" } } } } }
       }
     },
     "/erp/api/resource/Bin": {
@@ -256,53 +250,47 @@ const OPENAPI_SPEC = {
     }
   },
   "components": {
-    "securitySchemes": {
-      "tokenAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization",
-        "description": "Format: token API_KEY:API_SECRET"
-      }
-    },
     "schemas": {
       "ListResponse": { "type": "object", "properties": { "data": { "type": "array", "items": { "type": "object" } } } },
-      "DocResponse":  { "type": "object", "properties": { "data": { "type": "object" } } },
+      "DocResponse": { "type": "object", "properties": { "data": { "type": "object" } } },
       "SalesOrderInput": {
         "type": "object",
         "properties": {
-          "customer": { "type": "string" },
-          "delivery_date": { "type": "string" },
+          "customer": { "type": "string" }, "delivery_date": { "type": "string" },
           "selling_price_list": { "type": "string" },
-          "items": { "type": "array", "items": { "type": "object", "properties": { "item_code": { "type": "string" }, "qty": { "type": "number" }, "rate": { "type": "number" }, "warehouse": { "type": "string" }, "delivery_date": { "type": "string" } } } }
+          "items": { "type": "array", "items": { "type": "object", "properties": {
+            "item_code": { "type": "string" }, "qty": { "type": "number" },
+            "rate": { "type": "number" }, "warehouse": { "type": "string" }, "delivery_date": { "type": "string" }
+          }}}
         }
       },
       "DeliveryNoteInput": {
         "type": "object",
         "properties": {
-          "customer": { "type": "string" },
-          "posting_date": { "type": "string" },
-          "items": { "type": "array", "items": { "type": "object", "properties": { "item_code": { "type": "string" }, "qty": { "type": "number" }, "against_sales_order": { "type": "string" }, "warehouse": { "type": "string" } } } }
+          "customer": { "type": "string" }, "posting_date": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "object", "properties": {
+            "item_code": { "type": "string" }, "qty": { "type": "number" },
+            "against_sales_order": { "type": "string" }, "warehouse": { "type": "string" }
+          }}}
         }
       },
       "SalesInvoiceInput": {
         "type": "object",
         "properties": {
-          "customer": { "type": "string" },
-          "posting_date": { "type": "string" },
-          "items": { "type": "array", "items": { "type": "object", "properties": { "item_code": { "type": "string" }, "qty": { "type": "number" }, "rate": { "type": "number" }, "sales_order": { "type": "string" }, "delivery_note": { "type": "string" } } } }
+          "customer": { "type": "string" }, "posting_date": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "object", "properties": {
+            "item_code": { "type": "string" }, "qty": { "type": "number" },
+            "rate": { "type": "number" }, "sales_order": { "type": "string" }, "delivery_note": { "type": "string" }
+          }}}
         }
       },
       "PaymentEntryInput": {
         "type": "object",
         "properties": {
-          "payment_type": { "type": "string" },
-          "party_type": { "type": "string" },
-          "party": { "type": "string" },
-          "paid_amount": { "type": "number" },
-          "received_amount": { "type": "number" },
-          "paid_from": { "type": "string" },
-          "paid_to": { "type": "string" },
-          "reference_no": { "type": "string" },
+          "payment_type": { "type": "string" }, "party_type": { "type": "string" },
+          "party": { "type": "string" }, "paid_amount": { "type": "number" },
+          "received_amount": { "type": "number" }, "paid_from": { "type": "string" },
+          "paid_to": { "type": "string" }, "reference_no": { "type": "string" },
           "reference_date": { "type": "string" }
         }
       }
@@ -310,64 +298,63 @@ const OPENAPI_SPEC = {
   }
 };
 
-// Página inicial — serve o OpenAPI JSON para o CP4BA descobrir as operações
-app.get("/", (req, res) => {
-  res.json(OPENAPI_SPEC);
-});
+// OpenAPI spec
+app.get("/", (req, res) => { res.json(OPENAPI_SPEC); });
+app.get("/openapi.json", (req, res) => { res.json(OPENAPI_SPEC); });
 
-// Rota explícita para o OpenAPI spec
-app.get("/openapi.json", (req, res) => {
-  res.json(OPENAPI_SPEC);
+// ✅ Rota dedicada — retorna SEMPRE a última Sales Order criada (sem parâmetros)
+app.get("/erp/sales-order/last", async (req, res) => {
+  try {
+    const listResp = await axios.get(`${ERP_BASE}/api/resource/Sales Order`, {
+      headers: { Authorization: ERP_TOKEN, "Content-Type": "application/json" },
+      params: {
+        fields: '["name","customer","transaction_date","delivery_date","grand_total","status"]',
+        limit: 1,
+        order_by: "creation desc"
+      },
+      timeout: 30000
+    });
+    const items = listResp.data?.data;
+    if (!items || items.length === 0) return res.status(404).json({ error: "No Sales Orders found" });
+    const name = items[0].name;
+    const detailResp = await axios.get(
+      `${ERP_BASE}/api/resource/Sales Order/${encodeURIComponent(name)}`,
+      { headers: { Authorization: ERP_TOKEN }, timeout: 30000 }
+    );
+    res.json(detailResp.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message, details: err.response?.data || null });
+  }
 });
 
 // Health check
 app.get("/health", async (req, res) => {
   try {
-    const response = await axios.get(
-      `${ERP_BASE}/api/method/frappe.auth.get_logged_user`,
-      {
-        headers: {
-          Authorization: ERP_TOKEN
-        },
-        timeout: 30000
-      }
-    );
-    res.json(response.data);
+    const r = await axios.get(`${ERP_BASE}/api/method/frappe.auth.get_logged_user`,
+      { headers: { Authorization: ERP_TOKEN }, timeout: 30000 });
+    res.json(r.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      error: err.message,
-      details: err.response?.data || null
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Proxy genérico para tudo
+// Proxy genérico
 app.all("/erp/*", async (req, res) => {
   try {
     const erpPath = req.originalUrl.replace(/^\/erp/, "");
-
     const response = await axios({
       method: req.method,
       url: `${ERP_BASE}${erpPath}`,
-      headers: {
-        Authorization: ERP_TOKEN,
-        "Content-Type": "application/json"
-      },
+      headers: { Authorization: ERP_TOKEN, "Content-Type": "application/json" },
       params: req.query,
       data: req.body,
       timeout: 30000,
       validateStatus: () => true
     });
-
     res.status(response.status).json(response.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      error: err.message,
-      details: err.response?.data || null
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`ERP proxy rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`ERP proxy rodando na porta ${PORT}`));
